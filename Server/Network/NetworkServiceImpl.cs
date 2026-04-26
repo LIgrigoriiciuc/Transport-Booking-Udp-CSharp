@@ -58,9 +58,8 @@ public class NetworkServiceImpl : INetworkService
         var tripIds = reservations.Select(r => _facade.GetTripIdByReservation(r.Id)).ToList();
         return ProtoUtils.ToReservationList(reservations, seatsPerRes, users, tripIds);
     }
-    public void MakeReservation(string clientName, List<long> seatIds, long userId)
+    internal long MakeReservationCore(string clientName, List<long> seatIds, long userId)
     {
-        long tripId;
         lock (_reservationLock)
         {
             var seats = seatIds.Select(_facade.GetSeatById).ToList();
@@ -68,9 +67,13 @@ public class NetworkServiceImpl : INetworkService
                 if (s.IsReserved)
                     throw new Exception($"Seat {s.Number} is already reserved.");
             _facade.MakeReservationForSeats(clientName, seats, userId);
-            tripId = seats[0].TripId; 
+            return seats[0].TripId;
         }
-        NotifyPush(tripId); 
+    }
+    public void MakeReservation(string clientName, List<long> seatIds, long userId)
+    {
+        var tripId = MakeReservationCore(clientName, seatIds, userId);
+        NotifyPush(tripId);
     }
     public void CancelReservation(long reservationId)
     {
@@ -84,7 +87,7 @@ public class NetworkServiceImpl : INetworkService
         }
         NotifyPush(tripId); // outside lock
     }
-    private void NotifyPush(long tripId)
+    internal void NotifyPush(long tripId)
     {
         var reservations = GetAllReservations();
         //snapshot

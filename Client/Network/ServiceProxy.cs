@@ -10,11 +10,11 @@ namespace Client.Network;
 public class ServiceProxy : INetworkService
 {
     private readonly string _host;
-    private readonly int    _port;
-    private TcpClient?     _client;
+    private readonly int _port;
+    private TcpClient? _client;
     private NetworkStream? _stream;
     private Thread? _readerThread;
-    private volatile bool  _running;
+    private volatile bool _running;
     private readonly BlockingCollection<Response> _responses = new();
 
     public IObserver? Observer { get; set; }
@@ -26,7 +26,9 @@ public class ServiceProxy : INetworkService
 
     public void Connect()
     {
-        _client = new TcpClient(_host, _port);
+        _client = new TcpClient();
+        if (!_client.ConnectAsync(_host, _port).Wait(TimeSpan.FromSeconds(5)))
+            throw new Exception("Connection timed out.");
         _stream = _client.GetStream();
         _running = true;
         _readerThread = new Thread(ReadLoop)
@@ -52,9 +54,9 @@ public class ServiceProxy : INetworkService
             {
                 var response = Response.Parser.ParseDelimitedFrom(_stream!);
                 if (response.Type == Response.Types.Type.Push)
-                    Observer?.OnPushReceived(response.Push); // push — straight to observer
+                    Task.Run(() => Observer?.OnPushReceived(response.Push)); // to observer, don't block reader thread
                 else
-                    _responses.Add(response); // normal — goes to Exchange()
+                    _responses.Add(response); // to Exchange()
             }
             catch
             {
@@ -150,12 +152,8 @@ public class ServiceProxy : INetworkService
     {
         Exchange(new Request
         {
-            Type              = Request.Types.Type.CancelReservation,
+            Type  = Request.Types.Type.CancelReservation,
             CancelReservation = new CancelReservationPayload { ReservationId = reservationId }
         });
     }
-
-
-
-
 }

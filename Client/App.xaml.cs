@@ -1,10 +1,10 @@
-﻿
-using System.IO;
+﻿using System.IO;
 using System.Windows;
 using Client.GUI;
 using Client.Network;
 
 namespace Client;
+
 
 public partial class App : Application
 {

@@ -16,12 +16,12 @@
         </PackageReference>
     </ItemGroup>
 
-    <ItemGroup>
-        <Protobuf Include="Proto\reservation.proto" GrpcServices="None" />
-    </ItemGroup>
+<!--    <ItemGroup>-->
+<!--        <Protobuf Include="Proto\reservation.proto" GrpcServices="None" />-->
+<!--    </ItemGroup>-->
 
     <ItemGroup>
-        <ProjectReference Include="..\Shared\Shared.csproj" />
+        <ProjectReference Include="C:\Users\LUser\RiderProjects\Transport-Booking-Tcp-CSharp\Shared\Shared.csproj" />
     </ItemGroup>
 
 </Project>

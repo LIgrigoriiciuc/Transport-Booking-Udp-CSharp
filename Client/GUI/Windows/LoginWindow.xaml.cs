@@ -1,7 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Input;
 using Client.Network;
-using Shared.Proto;
 
 namespace Client.GUI.Windows;
 

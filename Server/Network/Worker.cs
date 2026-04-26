@@ -93,8 +93,12 @@ public class Worker : IObserver
                 case Request.Types.Type.MakeReservation:
                 {
                     var p = req.MakeReservation;
-                    _service.MakeReservation(p.ClientName, p.SeatIds.ToList(), p.UserId);
-                    return ResponseFactory.OkResponse();
+                    var tripId = _service.MakeReservationCore(
+                        p.ClientName, p.SeatIds.ToList(), p.UserId);
+                    // Send OK first, then push — fire-and-forget
+                    SendResponse(ResponseFactory.OkResponse());
+                    _service.NotifyPush(tripId);
+                    return null;
                 }
                 case Request.Types.Type.CancelReservation:
                 {

@@ -2,7 +2,7 @@
 
 public static class DateTimeUtils
 {
-    public const string Format = "dd-MM-yyyy HH:mm";
+    public const string Format = "yyyy-MM-dd HH:mm";
     public static string FormatDateTime(DateTime? dt) => dt.HasValue ? dt.Value.ToString(Format) : "";
     public static DateTime Parse(string? dt)
     {
