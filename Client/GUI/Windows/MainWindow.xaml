@@ -16,7 +16,7 @@
             <Button Content="Filter" Width="60" Click="FilterButton_Click" Margin="0,0,4,0"/>
             <Button Content="Reset"  Width="60" Click="ResetButton_Click"  Margin="0,0,20,0"/>
             <Button Content="Logout" Width="70" Click="LogoutButton_Click"
-                    Background="#FFDDDD"/>
+                    Background="#D6D6D6" Foreground="#222222"/>
         </StackPanel>
 
         <!-- Main content: left = trips+seats, right = reservations -->
@@ -66,7 +66,7 @@
                     <TextBox x:Name="ClientNameField" Margin="0,4"/>
                     <Button Content="Reserve Selected Seats"
                             Click="ReserveButton_Click"
-                            Height="35" Background="#DDFFDD"/>
+                            Height="35" Background="#D6D6D6" Foreground="#222222"/>
                 </StackPanel>
 
                 <DockPanel/>
@@ -77,7 +77,7 @@
                 <Label DockPanel.Dock="Top" Content="All Reservations" FontWeight="Bold"/>
                 <Button DockPanel.Dock="Bottom" Content="Cancel Selected Reservation"
                         Click="CancelButton_Click"
-                        Height="35" Margin="0,6,0,0" Background="#FFDDDD"/>
+                        Height="35" Margin="0,6,0,0" Background="#D6D6D6" Foreground="#222222"/>
                 <ListBox x:Name="ResList">
                     <ListBox.ItemTemplate>
                         <DataTemplate>

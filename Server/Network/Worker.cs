@@ -1,6 +1,7 @@
 ﻿using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using Google.Protobuf;
+using Serilog;
 using Shared;
 using Shared.Network;
 using Shared.Proto;
@@ -9,6 +10,7 @@ namespace Server.Network;
 
 public class Worker : IObserver
 { 
+    private static readonly ILogger Logger = Log.ForContext<Worker>();
     private readonly NetworkServiceImpl _service;
     private readonly TcpClient _client;
     private readonly NetworkStream  _stream;
@@ -22,6 +24,7 @@ public class Worker : IObserver
 
     public void Run()
     {
+        Logger.Debug("Worker started for client");
         try
         {
             while (true)
@@ -34,7 +37,7 @@ public class Worker : IObserver
         }
         catch (Exception)
         {
-            //connection dropped
+            Logger.Debug("Client connection dropped");
         }
         finally
         {
@@ -45,6 +48,7 @@ public class Worker : IObserver
     //called from thread pool
     public void OnPushReceived(PushPayload push)
     {
+        Logger.Debug("Sending push notification");
         SendResponse(new Response
         {
             Type = Response.Types.Type.Push,
@@ -53,6 +57,7 @@ public class Worker : IObserver
     }
     private Response? HandleRequest(Request req)
     {
+        Logger.Debug("Handling request of type {Type}", req.Type);
         try
         {
             switch (req.Type)
@@ -61,6 +66,7 @@ public class Worker : IObserver
                 {
                     var p = req.Login;
                     var user = _service.Login(p.Username, p.Password);
+                    Logger.Information("User {Username} logged in", p.Username);
                     _loggedUserId = user.Id;
                     _service.RegisterObserver(user.Id, this);
                     return ResponseFactory.LoginOkResponse(user);
@@ -70,6 +76,7 @@ public class Worker : IObserver
                     if (_loggedUserId.HasValue)
                     {
                         _service.Logout(_loggedUserId.Value);
+                        Logger.Information("User logged out");
                         _loggedUserId = null;
                     }
                     return ResponseFactory.OkResponse();
@@ -95,12 +102,14 @@ public class Worker : IObserver
                     var p = req.MakeReservation;
                     var tripId = _service.MakeReservationCore(
                         p.ClientName, p.SeatIds.ToList(), p.UserId);
+                    Logger.Information("Reservation made for {ClientName}", p.ClientName);
                     SendResponse(ResponseFactory.OkResponse());
                     _service.NotifyPush(tripId);
                     return null;
                 }
                 case Request.Types.Type.CancelReservation:
                 {
+                    Logger.Debug("Cancelling reservation {ReservationId}", req.CancelReservation.ReservationId);
                     _service.CancelReservation(req.CancelReservation.ReservationId);
                     return ResponseFactory.OkResponse();
                 }
@@ -110,11 +119,13 @@ public class Worker : IObserver
         }
         catch (Exception e)
         {
+            Logger.Error(e, "Error handling request {Type}", req.Type);
             return ResponseFactory.ErrorResponse(e.Message);
         }
     }
     private void SendResponse(Response response)
     {
+        Logger.Debug("Sending response of type {Type}", response.Type);
         lock (_stream)
         {
             response.WriteDelimitedTo(_stream);
@@ -124,6 +135,7 @@ public class Worker : IObserver
 
     private void Cleanup()
     {
+        Logger.Debug("Cleaning up worker");
         if (_loggedUserId.HasValue)
             _service.Logout(_loggedUserId.Value); // covers both clean logout miss and TCP drop
         try

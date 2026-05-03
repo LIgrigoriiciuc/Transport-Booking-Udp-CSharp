@@ -1,10 +1,12 @@
 ﻿using System.Configuration;
 using Microsoft.Data.Sqlite;
+using Serilog;
 
 namespace Server.Util;
 
 public class DatabaseConnection
 {
+    private static readonly ILogger Logger = Log.ForContext<DatabaseConnection>();
     private static readonly string DbUrl;
  
     [ThreadStatic]
@@ -21,18 +23,21 @@ public class DatabaseConnection
 
     public static void BindConnection(SqliteConnection conn, SqliteTransaction tx)
     {
+        Logger.Debug("Binding transaction");
         _transactionConnection = conn;
         _activeTransaction = tx;
     }
  
     public static void UnbindConnection()
     {
+        Logger.Debug("Unbinding transaction");
         _transactionConnection = null;
         _activeTransaction = null;
     }
 
     public static ConnectionHolder GetConnection()
     {
+        Logger.Debug("Getting database connection");
         if (_transactionConnection != null)
             return new ConnectionHolder(_transactionConnection, false);
  

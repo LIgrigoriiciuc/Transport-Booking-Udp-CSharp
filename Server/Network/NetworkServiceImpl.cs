@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using Serilog;
 using Server.Service;
 using Shared;
 using Shared.Network;
@@ -9,6 +10,7 @@ namespace Server.Network;
 
 public class NetworkServiceImpl : INetworkService
 {
+    private static readonly ILogger Logger = Log.ForContext<NetworkServiceImpl>();
     private readonly FacadeService _facade;
     private readonly ConcurrentDictionary<long, IObserver> _observers = new();
     private readonly object _reservationLock = new();

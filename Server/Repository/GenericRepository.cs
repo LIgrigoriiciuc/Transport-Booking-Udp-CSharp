@@ -1,5 +1,6 @@
 ﻿using System.Transactions;
 using Microsoft.Data.Sqlite;
+using Serilog;
 using Server.Domain;
 using Server.Util;
 
@@ -7,6 +8,7 @@ namespace Server.Repository;
 
 public abstract class GenericRepository<TId, TE> where TE : Entity<TId>
 {
+    private static readonly ILogger Logger = Log.ForContext(typeof(GenericRepository));
     private SqliteCommand CreateCommand(string sql, SqliteConnection conn)
     {
         var cmd = new SqliteCommand(sql, conn);
@@ -16,6 +18,7 @@ public abstract class GenericRepository<TId, TE> where TE : Entity<TId>
  
     public List<TE> Filter(Filter filter)
     {
+        Logger.Debug("Filtering {TableName} with {Filter}", GetTableName(), filter);
         var entities = new List<TE>();
         string sql = $"SELECT * FROM {GetTableName()} {filter.BuildWhere()}";
  
@@ -32,6 +35,7 @@ public abstract class GenericRepository<TId, TE> where TE : Entity<TId>
  
     public List<TE> GetAll()
     {
+        Logger.Debug("Getting all from {TableName}", GetTableName());
         var entities = new List<TE>();
         string sql = $"SELECT * FROM {GetTableName()}";
  
@@ -46,6 +50,7 @@ public abstract class GenericRepository<TId, TE> where TE : Entity<TId>
  
     public TE? FindById(TId id)
     {
+        Logger.Debug("Finding {TableName} by id {Id}", GetTableName(), id);
         string sql = $"SELECT * FROM {GetTableName()} WHERE id = @id";
  
         using var holder = DatabaseConnection.GetConnection();
@@ -58,6 +63,7 @@ public abstract class GenericRepository<TId, TE> where TE : Entity<TId>
  
     public bool Remove(TId id)
     {
+        Logger.Debug("Removing {TableName} with id {Id}", GetTableName(), id);
         string sql = $"DELETE FROM {GetTableName()} WHERE id = @id";
  
         using var holder = DatabaseConnection.GetConnection();
@@ -68,6 +74,7 @@ public abstract class GenericRepository<TId, TE> where TE : Entity<TId>
  
     public void Add(TE e)
     {
+        Logger.Debug("Adding to {TableName}", GetTableName());
         string sql = $"{BuildInsertSql()}; SELECT last_insert_rowid();";
  
         using var holder = DatabaseConnection.GetConnection();
@@ -81,6 +88,7 @@ public abstract class GenericRepository<TId, TE> where TE : Entity<TId>
  
     public bool Update(TE e)
     {
+        Logger.Debug("Updating {TableName} with id {Id}", GetTableName(), e.Id);
         using var holder = DatabaseConnection.GetConnection();
         using var command = CreateCommand(BuildUpdateSql(), holder.Connection);
         SetUpdateParameters(command, e);

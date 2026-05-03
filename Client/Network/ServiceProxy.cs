@@ -4,11 +4,13 @@ using Google.Protobuf;
 using Shared;
 using Shared.Network;
 using Shared.Proto;
+using Serilog;
 
 namespace Client.Network;
 
 public class ServiceProxy : INetworkService
 {
+    private static readonly ILogger Logger = Log.ForContext<ServiceProxy>();
     private readonly string _host;
     private readonly int _port;
     private TcpClient? _client;
@@ -29,6 +31,7 @@ public class ServiceProxy : INetworkService
         _client = new TcpClient();
         if (!_client.ConnectAsync(_host, _port).Wait(TimeSpan.FromSeconds(5)))
             throw new Exception("Connection timed out.");
+        Logger.Information("Connected to server at {Host}:{Port}", _host, _port);
         _stream = _client.GetStream();
         _running = true;
         _readerThread = new Thread(ReadLoop)
@@ -41,6 +44,7 @@ public class ServiceProxy : INetworkService
 
     public void Disconnect()
     {
+        Logger.Debug("Disconnecting from server");
         _running = false;
         _stream?.Close();
         _client?.Close();
@@ -60,6 +64,7 @@ public class ServiceProxy : INetworkService
             }
             catch
             {
+                if (_running) Logger.Error("Error reading from stream");
                 if (_running) break;
             }
         }
@@ -67,11 +72,18 @@ public class ServiceProxy : INetworkService
 
     private Response Exchange(Request request)
     {
+        Logger.Debug("Sending request of type {Type}", request.Type);
         Send(request);
         if (!_responses.TryTake(out var response, TimeSpan.FromSeconds(10)))
+        {
+            Logger.Warning("Timeout waiting for response to {Type}", request.Type);
             throw new Exception("Server did not respond in time.");
+        }
         if (response.Type == Response.Types.Type.Error)
+        {
+            Logger.Warning("Server error for {Type}: {Error}", request.Type, response.Error);
             throw new Exception(response.Error);
+        }
         return response;
 
     }
@@ -87,6 +99,7 @@ public class ServiceProxy : INetworkService
 
     public ProtoUser Login(string username, string password)
     {
+        Logger.Debug("Logging in user {Username}", username);
         var response = Exchange(new Request
         {
             Type = Request.Types.Type.Login,
@@ -101,6 +114,7 @@ public class ServiceProxy : INetworkService
 
     public void Logout(long userId)
     {
+        Logger.Debug("Logging out user {UserId}", userId);
         Exchange(new Request
         {
             Type = Request.Types.Type.Logout,
@@ -113,6 +127,7 @@ public class ServiceProxy : INetworkService
     }
     public TripList SearchTrips(string destination, string from, string to)
     {
+        Logger.Debug("Searching trips with destination {Destination}", destination);
         var response = Exchange(new Request
         {
             Type        = Request.Types.Type.SearchTrips,
@@ -124,6 +139,7 @@ public class ServiceProxy : INetworkService
 
     public SeatList GetSeats(long tripId)
     {
+        Logger.Debug("Getting seats for trip {TripId}", tripId);
         var response = Exchange(new Request
         {
             Type     = Request.Types.Type.GetSeats,
@@ -134,6 +150,7 @@ public class ServiceProxy : INetworkService
 
     public ReservationList GetAllReservations()
     {
+        Logger.Debug("Getting all reservations");
         var response = Exchange(new Request
         {
             Type = Request.Types.Type.GetReservations
@@ -142,6 +159,7 @@ public class ServiceProxy : INetworkService
     }
     public void MakeReservation(string clientName, List<long> seatIds, long userId)
     {
+        Logger.Debug("Making reservation for {ClientName} with {SeatCount} seats", clientName, seatIds.Count);
         var payload = new MakeReservationPayload
             { ClientName = clientName, UserId = userId };
         payload.SeatIds.AddRange(seatIds);
@@ -150,6 +168,7 @@ public class ServiceProxy : INetworkService
 
     public void CancelReservation(long reservationId)
     {
+        Logger.Debug("Cancelling reservation {ReservationId}", reservationId);
         Exchange(new Request
         {
             Type  = Request.Types.Type.CancelReservation,
