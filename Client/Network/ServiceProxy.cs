@@ -54,7 +54,7 @@ public class ServiceProxy : INetworkService
             {
                 var response = Response.Parser.ParseDelimitedFrom(_stream!);
                 if (response.Type == Response.Types.Type.Push)
-                    Task.Run(() => Observer?.OnPushReceived(response.Push)); // to observer, don't block reader thread
+                    Task.Run(() => Observer?.OnPushReceived(response.Push)); //to observer, don't block reader thread
                 else
                     _responses.Add(response); // to Exchange()
             }

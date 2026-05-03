@@ -85,7 +85,7 @@ public class NetworkServiceImpl : INetworkService
             tripId = _facade.GetTripIdByReservation(reservationId);
             _facade.CancelReservation(reservationId);
         }
-        NotifyPush(tripId); // outside lock
+        NotifyPush(tripId); 
     }
     internal void NotifyPush(long tripId)
     {

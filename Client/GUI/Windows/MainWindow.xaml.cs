@@ -39,11 +39,12 @@ public partial class MainWindow : Window, IObserver
             RefreshReservations(push.Reservations);
             if (_selectedTrip != null && _selectedTrip.Id == push.UpdatedTripId)
             {
-                // redraw keeping whatever selection is still valid
+                //redraw keeping whatever selection is still valid
                 DrawSeats(_selectedTrip.Id, keepSelection: true);
             }
         });
     }
+    
     private void ResetButton_Click(object sender, RoutedEventArgs e)
     {
         DestFilter.Clear(); 

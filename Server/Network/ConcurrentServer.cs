@@ -23,7 +23,7 @@ public class ConcurrentServer
             {
                 var client = _listener.AcceptTcpClient();
                 var worker = new Worker(_service, client);
-                Task.Run(worker.Run); //ofVirtual in Java
+                Task.Run(worker.Run);
             }
         }
         finally

@@ -95,7 +95,6 @@ public class Worker : IObserver
                     var p = req.MakeReservation;
                     var tripId = _service.MakeReservationCore(
                         p.ClientName, p.SeatIds.ToList(), p.UserId);
-                    // Send OK first, then push — fire-and-forget
                     SendResponse(ResponseFactory.OkResponse());
                     _service.NotifyPush(tripId);
                     return null;
